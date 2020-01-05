@@ -160,23 +160,27 @@ void V_InterpolateAngles( float *start, float *end, float *output, float frac )
 	V_NormalizeAngles( output );
 } */
 
+enum calcBobMode_t
+{
+	VB_COS,
+	VB_SIN,
+	VB_COS2,
+	VB_SIN2
+};
+
 // TO-DO: try to somehow merge V_CalcBob 1, 2 and 3 into one function
 // Possible solution: have an array of bobtime, bob and lasttime variables
 // Quakeworld bob code, this fixes jitters in the mutliplayer since the clock (pparams->time) isn't quite linear
-float V_CalcBob ( struct ref_params_s *pparams, float freqmod = 1.0f, int mode = 1 )
+void V_CalcBob ( struct ref_params_s *pparams, float freqmod, calcBobMode_t mode, double &bobtime, float &bob, float &lasttime )
 {
-	static	double	bobtime;
-	static float	bob;
 	float	cycle;
-	static float	lasttime;
 	vec3_t	vel;
-	
 
 	if ( pparams->onground == -1 ||
 		 pparams->time == lasttime )
 	{
 		// just use old value
-		return bob;	
+		return;// bob;	
 	}
 
 	lasttime = pparams->time;
@@ -200,117 +204,20 @@ float V_CalcBob ( struct ref_params_s *pparams, float freqmod = 1.0f, int mode =
 	vel[2] = 0;
 
 	bob = sqrt( vel[0] * vel[0] + vel[1] * vel[1] ) * cl_bob->value;
-	
-	if (mode)
-		bob = bob * 0.3 + bob * 0.7 * sin(cycle);
-	else
-		bob = bob * 0.3 + bob * 0.7 * cos(cycle);
+
+	if ( mode == VB_SIN )
+		bob = bob * 0.3 + bob * 0.7 * sin( cycle );
+	else if ( mode == VB_COS )
+		bob = bob * 0.3 + bob * 0.7 * cos( cycle );
+	else if ( mode == VB_SIN2 )
+		bob = bob * 0.3 + bob * 0.7 * sin( cycle ) * sin( cycle );
+	else if ( mode == VB_COS2 )
+		bob = bob * 0.3 + bob * 0.7 * cos( cycle ) * cos( cycle );
 
 	bob = V_min( bob, 4 );
 	bob = V_max( bob, -7 );
-	return bob;
+	//return bob;
 	
-}
-
-// Quakeworld bob code, this fixes jitters in the mutliplayer since the clock (pparams->time) isn't quite linear
-float V_CalcBob2(struct ref_params_s *pparams, float freqmod = 1.0f, int mode = 1)
-{
-	static	double	bobtime;
-	static float	bob;
-	float	cycle;
-	static float	lasttime;
-	vec3_t	vel;
-
-
-	if (pparams->onground == -1 ||
-		pparams->time == lasttime)
-	{
-		// just use old value
-		return bob;
-	}
-
-	lasttime = pparams->time;
-
-	bobtime += pparams->frametime * freqmod;
-	cycle = bobtime - (int)(bobtime / cl_bobcycle->value) * cl_bobcycle->value;
-	cycle /= cl_bobcycle->value;
-
-	if (cycle < cl_bobup->value)
-	{
-		cycle = M_PI * cycle / cl_bobup->value;
-	}
-	else
-	{
-		cycle = M_PI + M_PI * (cycle - cl_bobup->value) / (1.0 - cl_bobup->value);
-	}
-
-	// bob is proportional to simulated velocity in the xy plane
-	// (don't count Z, or jumping messes it up)
-	VectorCopy(pparams->simvel, vel);
-	vel[2] = 0;
-
-	bob = sqrt(vel[0] * vel[0] + vel[1] * vel[1]) * cl_bob->value;
-	
-	if (mode)
-		bob = bob * 0.3 + bob * 0.7 * sin(cycle);
-	else
-		bob = bob * 0.3 + bob * 0.7 * cos(cycle);
-
-	bob = V_min(bob, 4);
-	bob = V_max(bob, -7);
-	return bob;
-
-}
-
-// Quakeworld bob code, this fixes jitters in the mutliplayer since the clock (pparams->time) isn't quite linear
-// freqmod = frequency multiplier/modifier, mode: 1 = sin, 0 = cos
-float V_CalcBob3(struct ref_params_s *pparams, float freqmod = 1.0f, int mode = 1 )
-{
-	static	double	bobtime;
-	static float	bob;
-	float	cycle;
-	static float	lasttime;
-	vec3_t	vel;
-
-
-	if (pparams->onground == -1 ||
-		pparams->time == lasttime)
-	{
-		// just use old value
-		return bob;
-	}
-
-	lasttime = pparams->time;
-
-	bobtime += pparams->frametime * freqmod;
-	cycle = bobtime - (int)(bobtime / cl_bobcycle->value) * cl_bobcycle->value;
-	cycle /= cl_bobcycle->value;
-
-	if (cycle < cl_bobup->value)
-	{
-		cycle = M_PI * cycle / cl_bobup->value;
-	}
-	else
-	{
-		cycle = M_PI + M_PI * (cycle - cl_bobup->value) / (1.0 - cl_bobup->value);
-	}
-
-	// bob is proportional to simulated velocity in the xy plane
-	// (don't count Z, or jumping messes it up)
-	VectorCopy(pparams->simvel, vel);
-	vel[2] = 0;
-
-	bob = sqrt(vel[0] * vel[0] + vel[1] * vel[1]) * cl_bob->value;
-
-	if (mode)
-		bob = bob * 0.3 + bob * 0.7 * sin(cycle);
-	else
-		bob = bob * 0.3 + bob * 0.7 * cos(cycle);
-
-	bob = V_min(bob, 4);
-	bob = V_max(bob, -7);
-	return bob;
-
 }
 
 /*
@@ -597,14 +504,18 @@ V_CalcRefdef
 */
 void V_CalcNormalRefdef ( struct ref_params_s *pparams )
 {
-	cl_entity_t		*ent, *view;
-	int				i;
-	vec3_t			angles;
-	float			bob, bob2, bob3, waterOffset;
+	cl_entity_t				*ent, *view;
+	int						i;
+	vec3_t					angles;
+	float					bobRight = 0, bobUp = 0, bobForward = 0, waterOffset;
 	static viewinterp_t		ViewInterp;
 
 	static float oldz = 0;
 	static float lasttime;
+
+	// double &bobtime, float &bob, float &lasttime
+	static double bobtimes[ 3 ] = { 0,0,0 };
+	static float lasttimes[ 3 ] = { 0,0,0 };
 
 	vec3_t camAngles, camForward, camRight, camUp;
 	cl_entity_t *pwater;
@@ -626,13 +537,13 @@ void V_CalcNormalRefdef ( struct ref_params_s *pparams )
 
 	// transform the view offset by the model's matrix to get the offset from
 	// model origin for the view
-	bob  = V_CalcBob ( pparams, 0.750f, 0 ); // right
-	bob2 = V_CalcBob2( pparams, 1.500f, 1 ); // up
-	bob3 = V_CalcBob3( pparams, 1.000f, 1 ); // forward
+	V_CalcBob( pparams, 0.75f, VB_SIN,	bobtimes[0], bobRight,		lasttimes[0] ); // right
+	V_CalcBob( pparams, 1.50f, VB_SIN,	bobtimes[1], bobUp,			lasttimes[1] ); // up
+	V_CalcBob( pparams, 1.00f, VB_SIN,	bobtimes[2], bobForward,	lasttimes[2] ); // forward
 
 	// refresh position
 	VectorCopy ( pparams->simorg, pparams->vieworg );
-	pparams->vieworg[2] += ( bob );
+	pparams->vieworg[2] += ( bobRight );
 	VectorAdd( pparams->vieworg, pparams->viewheight, pparams->vieworg );
 
 	VectorCopy ( pparams->cl_viewangles, pparams->viewangles );
@@ -763,20 +674,20 @@ void V_CalcNormalRefdef ( struct ref_params_s *pparams )
 
 	for ( i = 0; i < 3; i++ )
 	{
-		view->origin[i] += bob  * 0.5 * pparams->right[i];
-		view->origin[i] += bob2 * 0.25 * pparams->up[i];
-		view->origin[i] += bob3 * 0.125 * pparams->forward[i];
+		view->origin[i] += bobRight  * 0.5 * pparams->right[i];
+		view->origin[i] += bobUp * 0.25 * pparams->up[i];
+		view->origin[i] += bobForward * 0.125 * pparams->forward[i];
 	}
 
-	view->origin[2] += bob;
+	view->origin[2] += bobRight;
 
 	// throw in a little tilt.
-	view->angles[YAW]   -= bob * 0.8;
-	view->angles[ROLL]  -= bob2 * 0.8;
-	view->angles[PITCH] -= bob * 1.2;
+	view->angles[YAW]   -= bobRight * 0.8;
+	view->angles[ROLL]  -= bobUp * 0.8;
+	view->angles[PITCH] -= bobRight * 1.2;
 
-	pparams->viewangles[ROLL] += bob * 0.15;
-	pparams->viewangles[PITCH] += bob * 0.55;
+	pparams->viewangles[ROLL] += bobRight * 0.15;
+	pparams->viewangles[PITCH] += bobRight * 0.55;
 
 	// Enables old HL WON view bobbing
 	VectorCopy( view->angles, view->curstate.angles );

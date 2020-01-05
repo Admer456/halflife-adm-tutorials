@@ -160,6 +160,8 @@ void V_InterpolateAngles( float *start, float *end, float *output, float frac )
 	V_NormalizeAngles( output );
 } */
 
+// TO-DO: try to somehow merge V_CalcBob 1, 2 and 3 into one function
+// Possible solution: have an array of bobtime, bob and lasttime variables
 // Quakeworld bob code, this fixes jitters in the mutliplayer since the clock (pparams->time) isn't quite linear
 float V_CalcBob ( struct ref_params_s *pparams, float freqmod = 1.0f, int mode = 1 )
 {

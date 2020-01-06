@@ -7,8 +7,10 @@ This repository serves as a reflection of the code that is shown in my tutorial 
 Downloads
 ----------------------
 
-If you are a non-programmer, and/or just want to see the final result of a certain tutorial, or perhaps you're a mapper who wants to try out a certain feature created in the tutorial, visit the releases page:   
-[link](https://github.com/Admer456/halflife-adm-tutorials/releases)   
+If you are a non-programmer, and/or just want to see the final result of a certain tutorial, or perhaps you're a mapper who wants to try out a certain feature created from the tutorials, visit the releases page:   
+[Releases](https://github.com/Admer456/halflife-adm-tutorials/releases)
+
+This fork of the SDK is based on [Solokiller's fork of HL SDK 2.4](https://github.com/SamVanheer/halflife-updated), which provides compatibility with Visual Studio 2017 and 2019. This means if you want to compile this, it'll work right out of the box with VS2017 and VS2019. :)
 
 Half Life 1 SDK LICENSE
 ======================

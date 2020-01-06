@@ -168,8 +168,6 @@ enum calcBobMode_t
 	VB_SIN2
 };
 
-// TO-DO: try to somehow merge V_CalcBob 1, 2 and 3 into one function
-// Possible solution: have an array of bobtime, bob and lasttime variables
 // Quakeworld bob code, this fixes jitters in the mutliplayer since the clock (pparams->time) isn't quite linear
 void V_CalcBob ( struct ref_params_s *pparams, float freqmod, calcBobMode_t mode, double &bobtime, float &bob, float &lasttime )
 {

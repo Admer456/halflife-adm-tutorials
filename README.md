@@ -1,3 +1,15 @@
+HL SDK Tutorial Series
+======================
+
+This repository serves as a reflection of the code that is shown in my tutorial series on GameBanana.   
+[example - Introduction to Half-Life Programming](https://gamebanana.com/tuts/12801)
+
+Downloads
+----------------------
+
+If you are a non-programmer, and/or just want to see the final result of a certain tutorial, or perhaps you're a mapper who wants to try out a certain feature created in the tutorial, visit the releases page:   
+[link](https://github.com/Admer456/halflife-adm-tutorials/releases)   
+
 Half Life 1 SDK LICENSE
 ======================
 

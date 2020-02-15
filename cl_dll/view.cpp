@@ -671,56 +671,20 @@ void V_CalcNormalRefdef ( struct ref_params_s *pparams )
 
 	for ( i = 0; i < 3; i++ )
 	{
-		view->origin[i] += bobRight		* 0.33 * pparams->right[i];
-		view->origin[i] += bobUp		* 0.17 * pparams->up[i];
-		//view->origin[i] += bobForward	* 0.125 * pparams->forward[i];
+		//view->origin[i] += bobRight		* 0.33 * pparams->right[i];
+		//view->origin[i] += bobUp		* 0.17 * pparams->up[i];
+		view->origin[i] += bobForward	* 0.4 * pparams->forward[i];
 	}
 
 	view->origin[2] += bobRight;
 
 	// throw in a little tilt.
-	view->angles[YAW]   -= bobRight * 0.3;
-	view->angles[ROLL]  -= bobUp * 0.5;
-	view->angles[PITCH] -= bobRight * 0.3;
-
-	int mouseX = 0, mouseY = 0;
-	gEngfuncs.GetMousePosition( &mouseX, &mouseY );
-
-	static float blendMouseX = 0.0;
-	static float blendMouseY = 0.0;
-
-	float relMouseX = ((float)(mouseX) / ScreenWidth) - 0.5;
-	float relMouseY = ((float)(mouseY) / ScreenHeight) - 0.5;
-	relMouseX *= 300.0;
-	relMouseY *= 300.0;
-
-	if ( relMouseX > 10.0 )
-		relMouseX = 10.0;
-	else if ( relMouseX < -10.0 )
-		relMouseX = -10.0;
-
-	if ( relMouseY > 10.0 )
-		relMouseY = 10.0;
-	else if ( relMouseY < -10.0 )
-		relMouseY = -10.0;
-
-	blendMouseX = relMouseX * 0.07 + blendMouseX * 0.97;	
-	blendMouseY = relMouseY * 0.07 + blendMouseY * 0.97;
-
-	gEngfuncs.Con_Printf( "\nX %3.2f Y %3.2f", blendMouseX, blendMouseY );
-
-	view->angles[ROLL] -= blendMouseX;
-	view->angles[YAW] += blendMouseX * 0.5;
-	view->angles[PITCH] += blendMouseY * 0.5;
+	view->angles[YAW]   -= bobForward * 0.5;
+	view->angles[ROLL]  -= bobForward * 1.0;
+	view->angles[PITCH] -= bobForward * 0.3;
 
 	// Enables old HL WON view bobbing
 	VectorCopy( view->angles, view->curstate.angles );
-
-	for ( int i = 0; i < 3; i++ )
-	{
-		view->origin[ i ] += 0.2 * blendMouseX * pparams->right[ i ];
-		view->origin[ i ] -= 0.35 * blendMouseY * pparams->up[ i ];
-	}
 
 	// pushing the view origin down off of the same X/Z plane as the ent's origin will give the
 	// gun a very nice 'shifting' effect when the player looks up/down. If there is a problem
